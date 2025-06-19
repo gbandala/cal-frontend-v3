@@ -431,10 +431,10 @@ export const getAllIntegrationQueryFn =
 export const connectAppIntegrationQueryFn = async (
   appType: IntegrationAppType
 ) => {
-  // console.log("🔌 [CONNECT_INTEGRATION] Conectando integración", {
-  //   endpoint: `integration/connect/${appType}`,
-  //   appType
-  // });
+  console.log("🔌 [CONNECT_INTEGRATION] Conectando integración", {
+    endpoint: `integration/connect/${appType}`,
+    appType
+  });
 
   try {
     const response = await API.get(`integration/connect/${appType}`);

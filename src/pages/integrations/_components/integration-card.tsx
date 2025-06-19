@@ -36,11 +36,19 @@ interface ImageWrapperProps {
 const SUCCESS_MESSAGES: Record<any, string> = {
   [IntegrationAppEnum.GOOGLE_MEET_AND_CALENDAR]:
     "Google Calendar connected successfully!",
+  [IntegrationAppEnum.ZOOM_MEETING]:
+    "Zoom connected successfully!",
+  [IntegrationAppEnum.OUTLOOK_CALENDAR]:
+    "Outlook Calendar connected successfully!",
 };
 
 const ERROR_MESSAGES: Record<any, string> = {
   [IntegrationAppEnum.GOOGLE_MEET_AND_CALENDAR]:
     "Failed to connect Google Calendar. Please try again.",
+  [IntegrationAppEnum.ZOOM_MEETING]:
+    "Failed to connect Zoom. Please try again.",
+  [IntegrationAppEnum.OUTLOOK_CALENDAR]:
+    "Failed to connect Outlook Calendar. Please try again.",
 };
 
 const IntegrationCard = ({
@@ -109,11 +117,10 @@ const IntegrationCard = ({
             className={`shrink-0 inline-flex items-center 
               justify-center min-h-[44px] text-sm font-semibold
                p-[8px_16px] rounded-full w-[180px] disabled:pointer-events-none
-               ${
-                 isDisabled
-                   ? "pointer-events-none opacity-80 border border-gray-200 text-muted-foreground bg-transparent"
-                   : "bg-primary text-primary-foreground"
-               }`}
+               ${isDisabled
+                ? "pointer-events-none opacity-80 border border-gray-200 text-muted-foreground bg-transparent"
+                : "bg-primary text-primary-foreground"
+              }`}
             aria-disabled={isDisabled}
             disabled={isLoading}
           >

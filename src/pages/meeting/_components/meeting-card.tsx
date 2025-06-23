@@ -130,27 +130,21 @@ const MeetingCard = (props: {
                 <p className="font-normal text-[15px]">{meeting.guestEmail}</p>
               </li>
               <li className="mb-4">
-                <h5 className="inline-block mb-1 font-bold text-sm leading-[14px] uppercase">
+                <h5 className="block mb-1 font-bold text-sm leading-[14px] uppercase">
                   Location
                 </h5>
-                <div className="flex items-center mr-6">
-                  {locationOption && (
-                    <>
-                      <img
-                        src={locationOption?.logo as string}
-                        alt={locationOption?.label}
-                        className="w-5 h-5 mr-2"
-                      />
-                      <span className="mt-1 font-normal text-[15px]">
-                        {locationOption?.label}
-                      </span>
-                    </>
-                  )}
-                </div>
+                <a
+                  href={meeting.meetLink}
+                  className="font-normal text-[15px] text-blue-600 hover:text-blue-800 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {meeting.meetLink}
+                </a>
               </li>
               <li className="mb-4">
                 <h5 className="inline-block mb-1 font-bold text-sm leading-[14px] uppercase">
-                  Questions
+                  Additional Info
                 </h5>
                 <p className="font-normal text-[15px]">
                   {meeting.additionalInfo ? (

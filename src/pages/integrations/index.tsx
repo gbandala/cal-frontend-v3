@@ -31,60 +31,13 @@ const Integrations = () => {
   // Usar solo data?.integrations ya que 'data' no existe en el tipo de respuesta
   const integrations = data?.integrations || [];
 
- // 🐛 DEBUG: Logs para verificar estructura
+  // 🐛 DEBUG: Logs para verificar estructura
   console.log("🔍 [DEBUG] Raw data from API:", data);
   console.log("🔍 [DEBUG] Processed integrations:", integrations);
   console.log("🔍 [DEBUG] Integration count:", integrations.length);
   console.log("🔍 [DEBUG] Is handling OAuth:", isHandlingOAuth);
 
-  // return (
-  //   <div className="flex flex-col !gap-5">
-  //     <PageTitle
-  //       title="Integrations & apps"
-  //       subtitle="Connect all your apps directly from here. You need to connect these apps"
-  //     />
-
-  //     <ErrorAlert isError={isError} error={error} />
-
-  //     <div className="relative flex flex-col gap-4">
-  //       <section className="flex flex-col gap-4 text-muted-foreground">
-  //         {isFetching || isError ? (
-  //           <div className="flex items-center justify-center min-h-[30vh]">
-  //             <Loader size="lg" color="black" />
-  //           </div>
-  //         ) : (
-  //           <>
-
-  //             <div className="space-y-4">
-  //               {integrations.length > 0 ? (
-  //                 integrations.map((integration) => (
-  //                   <IntegrationCard
-  //                     key={integration.app_type}
-  //                     isDisabled={
-  //                       integration.app_type === "MICROSOFT_TEAMS"
-  //                     }
-  //                     appType={integration.app_type}
-  //                     title={integration.title}
-  //                     isConnected={integration.isConnected}
-  //                   />
-  //                 ))
-  //               ) : (
-  //                 // 📝 Mostrar mensaje si no hay integraciones
-  //                 <div className="text-center py-8">
-  //                   <p className="text-gray-500">No integrations found</p>
-  //                   <p className="text-sm text-gray-400 mt-2">
-  //                     Check API response structure in console
-  //                   </p>
-  //                 </div>
-  //               )}
-  //             </div>
-  //           </>
-  //         )}
-  //       </section>
-  //     </div>
-  //   </div>
-  // );
-return (
+  return (
     <div className="flex flex-col !gap-5">
       <PageTitle
         title="Integrations & apps"
@@ -113,7 +66,7 @@ return (
                     <IntegrationCard
                       key={integration.app_type}
                       isDisabled={
-                        integration.app_type === "MICROSOFT_TEAMS" 
+                        integration.app_type === "MICROSOFT_TEAMS"
                       }
                       appType={integration.app_type}
                       title={integration.title}

@@ -85,10 +85,10 @@ const IntegrationCard = ({
       <CardHeader className="flex flex-col gap-4">
         {Array.isArray(logos) ? (
           <div className="flex items-center gap-4">
-            <ImageWrapper src={logos[0]} alt="Google Meet logo" />
+            {/* <ImageWrapper src={logos[0]} alt="Google Meet logo" />
             <span className="mx-1">
               <PlusIcon className="w-5 h-5" />
-            </span>
+            </span> */}
             <ImageWrapper src={logos[1]} alt="Google Calendar logo" />
           </div>
         ) : (

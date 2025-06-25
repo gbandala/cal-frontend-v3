@@ -46,6 +46,7 @@ import {
   CalendarQueryOptions,
   CalendarSyncPayload
 } from "@/types/calendar.type";
+import { EventLocationEnumType } from "@/lib/types";
 
 //*********** AUTH APIS - AUTENTICACIÓN DE USUARIOS ***********
 /*
@@ -195,24 +196,35 @@ export const registerMutationFn = async (
  * 3. El evento queda disponible para que otros lo agenden
  */
 export const CreateEventMutationFn = async (data: CreateEventPayloadType) => {
-  // console.log("📅 [CREATE_EVENT] Creando nuevo evento", {
-  //   endpoint: "/event/create",
-  //   inputData: data
-  // });
+  console.log("📅 [CREATE_EVENT] Creando nuevo evento", {
+    endpoint: "/event/create",
+    inputData: {
+      ...data,
+      locationType: data.locationType, // Ahora será un EventLocationEnumType específico
+    }
+  });
 
   try {
     const response = await API.post("/event/create", data);
 
-    // console.log("✅ [CREATE_EVENT] Evento creado exitosamente", {
-    //   status: response.status,
-    //   responseData: response.data
-    // });
+    console.log("✅ [CREATE_EVENT] Evento creado exitosamente", {
+      status: response.status,
+      locationType: data.locationType,
+      calendarInfo: {
+        id: data.calendar_id || "primary",
+        name: data.calendar_name || "Primary Calendar"
+      },
+      responseData: response.data
+    });
 
     return response.data;
   } catch (error) {
     console.log("❌ [CREATE_EVENT] Error al crear evento", {
       error,
-      inputData: data
+      inputData: {
+        ...data,
+        locationType: data.locationType,
+      }
     });
     throw error;
   }

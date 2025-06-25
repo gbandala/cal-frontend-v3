@@ -21,7 +21,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusIcon } from "lucide-react";
-import { locationOptions, VideoConferencingPlatform } from "@/lib/types";
+import { 
+  locationOptions, 
+  VideoConferencingPlatform,
+  ConferencePlatform,
+  CalendarProvider,
+  EventLocationEnumType,
+  buildLocationTypeFromSelection,
+  getCalendarProvider,
+  getLocationTypeInfo,
+  isCombinationSupported
+} from "@/lib/types";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -98,9 +108,6 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
     setSelectedLocationType(value);
     setError(null);
 
-    // ✅ CAMBIO PRINCIPAL: NO limpiar campos de calendario automáticamente
-    // Esto permite mantener la selección de calendario de Outlook cuando se usa Zoom
-    
     // Si ya está verificado, solo actualizar el form
     if (connectionStatus[value] === true) {
       form.setValue("locationType", value);
@@ -175,6 +182,68 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
     return isPlatformConnected(selectedLocationType);
   };
 
+  // ✅ NUEVA: Obtener plataforma de conferencia desde UI selection
+  const getConferencePlatform = (uiSelection: VideoConferencingPlatform): ConferencePlatform => {
+    switch (uiSelection) {
+      case VideoConferencingPlatform.GOOGLE_MEET_AND_CALENDAR:
+        return ConferencePlatform.GOOGLE_MEET;
+      case VideoConferencingPlatform.ZOOM_MEETING:
+        return ConferencePlatform.ZOOM;
+      case VideoConferencingPlatform.MICROSOFT_TEAMS:
+        return ConferencePlatform.MICROSOFT_TEAMS;
+      default:
+        throw new Error(`Unknown UI selection: ${uiSelection}`);
+    }
+  };
+
+  // ✅ NUEVA: Obtener información de la combinación actual (MEJORADA)
+  const getCurrentCombinationInfo = () => {
+    if (!selectedLocationType) return null;
+    
+    try {
+      const conferencePlatform = getConferencePlatform(selectedLocationType);
+      
+      // 🔧 MEJORADO: Usar tanto ID como nombre para detección
+      const calendarProvider = getCalendarProvider(selectedCalendarId, selectedCalendarName);
+      
+      // 🐛 DEBUGGING: Log detallado
+      console.log('🔍 [COMBINATION_DEBUG] Current selection:', {
+        uiSelection: selectedLocationType,
+        conferencePlatform,
+        calendarId: selectedCalendarId,
+        calendarName: selectedCalendarName,
+        detectedProvider: calendarProvider
+      });
+      
+      const targetLocationType = buildLocationTypeFromSelection(conferencePlatform, selectedCalendarId, selectedCalendarName);
+      const info = getLocationTypeInfo(targetLocationType);
+      const isSupported = isCombinationSupported(conferencePlatform, calendarProvider);
+      
+      // 🐛 DEBUGGING: Log resultado final
+      console.log('🎯 [COMBINATION_RESULT]:', {
+        targetLocationType,
+        info,
+        isSupported
+      });
+      
+      return {
+        conferencePlatform,
+        calendarProvider,
+        targetLocationType,
+        info,
+        isSupported,
+        debug: {
+          calendarId: selectedCalendarId,
+          calendarName: selectedCalendarName,
+          detectedProvider: calendarProvider
+        }
+      };
+    } catch (error) {
+      console.error("❌ [COMBINATION_ERROR] Error getting combination info:", error);
+      return null;
+    }
+  };
+
   const handleCalendarChange = (calendarId: string, calendarName: string) => {
     setSelectedCalendarId(calendarId);
     setSelectedCalendarName(calendarName);
@@ -187,31 +256,49 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
     toast.error("Error al cargar calendarios. Se usará el calendario principal.");
   };
 
+  // ✅ FUNCIÓN onSubmit ACTUALIZADA CON NUEVA LÓGICA
   const onSubmit = (data: EventFormData) => {
-    const baseData = {
-      title: data.title,
-      duration: data.duration,
-      description: data.description || "",
-      locationType: data.locationType,
-    };
+    try {
+      // 1️⃣ Obtener plataforma de conferencia desde selección UI
+      const conferencePlatform = getConferencePlatform(data.locationType);
+      
+      // 2️⃣ Determinar el EventLocationEnumType específico basado en calendario
+      const specificLocationType = buildLocationTypeFromSelection(
+        conferencePlatform, 
+        data.calendar_id,
+        data.calendar_name
+      );
+      
+      // 🔧 MEJORADO: Usar detección mejorada para debugging
+      const detectedProvider = getCalendarProvider(data.calendar_id, data.calendar_name);
+      
+      // 3️⃣ Preparar datos con el tipo específico
+      const submitData = {
+        title: data.title,
+        duration: data.duration,
+        description: data.description || "",
+        locationType: specificLocationType, // ✅ Enviar tipo específico, no genérico
+        calendar_id: data.calendar_id || undefined,
+        calendar_name: data.calendar_name || undefined,
+      };
 
-    // ✅ INCLUIR calendar_id y calendar_name para TODAS las plataformas
-    const submitData = {
-      ...baseData,
-      calendar_id: data.calendar_id || undefined,
-      calendar_name: data.calendar_name || undefined,
-    };
+      // 4️⃣ Log para debugging
+      const combinationInfo = getCurrentCombinationInfo();
+      console.log("📝 [SUBMIT_EVENT] Datos preparados para envío:", {
+        uiSelection: data.locationType,
+        detectedPlatform: conferencePlatform,
+        calendarInfo: {
+          id: data.calendar_id,
+          name: data.calendar_name,
+          detectedProvider: detectedProvider
+        },
+        finalLocationType: specificLocationType,
+        combinationInfo: combinationInfo?.info,
+        submitData
+      });
 
-    console.log("📝 [SUBMIT_EVENT] Datos preparados para envío:", {
-      platform: data.locationType,
-      calendarId: data.calendar_id,
-      calendarName: data.calendar_name,
-      submitData
-    });
-
-    mutate(
-      submitData,
-      {
+      // 5️⃣ Enviar al backend
+      mutate(submitData, {
         onSuccess: (response) => {
           queryClient.invalidateQueries({
             queryKey: ["event_list"],
@@ -228,7 +315,7 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
 
           console.log("✅ [EVENT_CREATED] Evento creado exitosamente", {
             eventId: response.event?.id,
-            platform: data.locationType,
+            finalLocationType: specificLocationType,
             calendarUsed: response.event?.calendar_id || "primary",
             calendarName: response.event?.calendar_name || "Calendario principal"
           });
@@ -239,7 +326,68 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
           console.error("❌ [EVENT_CREATE_ERROR] Error al crear evento:", error);
           toast.error("Failed to create event");
         },
-      }
+      });
+    } catch (error) {
+      console.error("❌ [SUBMIT_ERROR] Error en preparación de datos:", error);
+      toast.error("Error preparing event data");
+    }
+  };
+
+  // ✅ INFORMACIÓN DINÁMICA SOBRE LA COMBINACIÓN ACTUAL (MEJORADA)
+  const renderCombinationInfo = () => {
+    const info = getCurrentCombinationInfo();
+    if (!info) return null;
+
+    return (
+      <div className="text-xs text-gray-500 mt-2 p-3 bg-gray-50 rounded border">
+        <div className="font-medium mb-2 text-sm">
+          📋 Configuration Preview:
+        </div>
+        
+        {/* Información principal */}
+        {/* <div className="space-y-1">
+          <div>
+            🎥 Meeting: <span className="font-medium">{info.info.meeting}</span>
+          </div>
+          <div>
+            📅 Calendar: <span className="font-medium">{info.info.calendar}</span>
+          </div>
+        </div> */}
+        
+        {/* Información de debugging */}
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <div className="text-xs text-gray-400 space-y-1">
+            <div>
+              Selected Calendar: <span className="font-mono">{selectedCalendarName || 'Primary'}</span>
+            </div>
+            {/* <div>
+              Calendar ID: <span className="font-mono">{selectedCalendarId || 'primary'}</span>
+            </div>
+            <div>
+              Detected Provider: <span className="font-mono font-medium">{info.calendarProvider}</span>
+            </div> */}
+            <div>
+              Will send: <span className="font-mono bg-gray-200 px-1 rounded">{info.targetLocationType}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Warnings o información adicional */}
+        {!info.isSupported && (
+          <div className="text-amber-600 mt-2 text-xs">
+            ⚠️ This combination may have limited support
+          </div>
+        )}
+        
+        {/* Warning si la detección puede estar incorrecta */}
+        {info.calendarProvider === CalendarProvider.GOOGLE && 
+         (selectedCalendarName?.toLowerCase().includes('outlook') || 
+          selectedCalendarName?.toLowerCase().includes('microsoft')) && (
+          <div className="text-orange-600 mt-2 text-xs">
+            🤔 Detection may be incorrect - calendar name suggests Outlook but detected as Google
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -427,28 +575,9 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
                       />
                     </FormControl>
                     <FormMessage />
-                    {/* ✅ MEJORADO: Mensajes informativos más claros */}
-                    <div className="text-xs text-gray-500 mt-1">
-                      {selectedCalendarId ? (
-                        <span>
-                          📅 Event will be created in: <strong>{selectedCalendarName}</strong>
-                          {selectedLocationType !== VideoConferencingPlatform.GOOGLE_MEET_AND_CALENDAR && selectedLocationType && (
-                            <span className="block text-amber-600 mt-1">
-                              ⚠️ Calendar is for tracking only. Video meeting will use {getPlatformName(selectedLocationType)}.
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <span>
-                          📅 Event will be created in your primary calendar
-                          {selectedLocationType !== VideoConferencingPlatform.GOOGLE_MEET_AND_CALENDAR && selectedLocationType && (
-                            <span className="block text-blue-600 mt-1">
-                              💡 You can select an Outlook calendar for tracking events while using {getPlatformName(selectedLocationType)}.
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </div>
+                    
+                    {/* ✅ NUEVA: Información de la combinación actual */}
+                    {selectedLocationType && renderCombinationInfo()}
                   </FormItem>
                 )}
               />
@@ -463,7 +592,7 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
                 disabled={
                   !isValid ||
                   isPending ||
-                  !isValidCombination() // ✅ USAR nueva función de validación
+                  !isValidCombination()
                 }
               >
                 {isPending ? (
@@ -481,4 +610,3 @@ const NewEventDialog = (props: { btnVariant?: string }) => {
 };
 
 export default NewEventDialog;
-

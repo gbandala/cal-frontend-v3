@@ -1,4 +1,5 @@
-import { IntegrationAppType, VideoConferencingPlatform } from "@/lib/types";
+import { IntegrationAppType } from "@/lib/types";
+import { EventLocationEnumType } from "@/lib/types";
 
 export type loginType = { email: string; password: string };
 export type LoginResponseType = {
@@ -19,18 +20,27 @@ export type registerType = {
   password: string;
 };
 
+// export type CreateEventPayloadType = {
+//   title: string;
+//   description: string;
+//   duration: number;
+//   locationType: VideoConferencingPlatform;
+//     // ✅ NUEVOS CAMPOS - Calendarios específicos
+//   /** ID del calendario donde se crearán las reuniones (opcional, default: 'primary') */
+//   calendar_id?: string;
+  
+//   /** Nombre descriptivo del calendario (opcional, para UI) */
+//   calendar_name?: string;
+
+// };
+
 export type CreateEventPayloadType = {
   title: string;
-  description: string;
   duration: number;
-  locationType: VideoConferencingPlatform;
-    // ✅ NUEVOS CAMPOS - Calendarios específicos
-  /** ID del calendario donde se crearán las reuniones (opcional, default: 'primary') */
+  description?: string;
+  locationType: EventLocationEnumType; // ✅ Usar el nuevo enum específico
   calendar_id?: string;
-  
-  /** Nombre descriptivo del calendario (opcional, para UI) */
   calendar_name?: string;
-
 };
 
 export interface UserType {

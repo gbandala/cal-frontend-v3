@@ -42,11 +42,11 @@ import { IntegrationAppType, VideoConferencingPlatform } from "./types";
 import {
   CalendarListResponse,
   CalendarSyncResponse,
-  CalendarDetailResponse,
+  // CalendarDetailResponse,
   CalendarQueryOptions,
   CalendarSyncPayload
 } from "@/types/calendar.type";
-import { EventLocationEnumType } from "@/lib/types";
+// import { EventLocationEnumType } from "@/lib/types";
 
 //*********** AUTH APIS - AUTENTICACIÓN DE USUARIOS ***********
 /*
@@ -528,22 +528,62 @@ export const updateUserAvailabilityMutationFn = async (
 
 //*********** */ MEETING APIS
 
+// export const getUserMeetingsQueryFn = async (
+//   filter: PeriodType
+// ): Promise<UserMeetingsResponseType> => {
+//   console.log("📅 [GET_MEETINGS] Obteniendo reuniones del usuario", {
+//     endpoint: `/meeting/user/all${filter ? `?filter=${filter}` : ""}`,
+//     filter
+//   });
+
+//   try {
+//     const response = await API.get(
+//       `/meeting/user/all${filter ? `?filter=${filter}` : ""}`
+//     );
+
+//     console.log("✅ [GET_MEETINGS] Reuniones obtenidas", {
+//       status: response.status,
+//       filter,
+//       meetingCount: response.data.meetings?.length || 0,
+//       responseData: response.data
+//     });
+
+//     return response.data;
+//   } catch (error) {
+//     console.log("❌ [GET_MEETINGS] Error al obtener reuniones", {
+//       error,
+//       filter
+//     });
+//     throw error;
+//   }
+// };
 export const getUserMeetingsQueryFn = async (
-  filter: PeriodType
+  filter: PeriodType,
+  timezone?: string // ✅ NUEVO PARÁMETRO OPCIONAL
 ): Promise<UserMeetingsResponseType> => {
-  // console.log("📅 [GET_MEETINGS] Obteniendo reuniones del usuario", {
-  //   endpoint: `/meeting/user/all${filter ? `?filter=${filter}` : ""}`,
-  //   filter
-  // });
+  // ✅ CONSTRUIR URL con query parameters
+  let url = `/meeting/user/all`;
+  const params = new URLSearchParams();
+  
+  if (filter) params.append('filter', filter);
+  if (timezone) params.append('timezone', timezone);
+  
+  const queryString = params.toString();
+  if (queryString) url += `?${queryString}`;
+
+  console.log("📅 [GET_MEETINGS] Obteniendo reuniones del usuario", {
+    endpoint: url,
+    filter,
+    timezone // ✅ NUEVO LOG
+  });
 
   try {
-    const response = await API.get(
-      `/meeting/user/all${filter ? `?filter=${filter}` : ""}`
-    );
+    const response = await API.get(url);
 
     console.log("✅ [GET_MEETINGS] Reuniones obtenidas", {
       status: response.status,
       filter,
+      timezone, // ✅ NUEVO LOG
       meetingCount: response.data.meetings?.length || 0,
       responseData: response.data
     });
@@ -552,7 +592,8 @@ export const getUserMeetingsQueryFn = async (
   } catch (error) {
     console.log("❌ [GET_MEETINGS] Error al obtener reuniones", {
       error,
-      filter
+      filter,
+      timezone // ✅ NUEVO LOG
     });
     throw error;
   }
